@@ -5,6 +5,16 @@
 
 ---
 
+## 📚 Project Documentation & References
+
+Comprehensive reference documents are stored in the [`docs/`](./docs) folder:
+* 📄 **[Product Requirement Document (PRD)](./docs/PRD.md):** Official requirements, user stories, functional and non-functional specifications.
+* 🏛️ **[Technical Architecture Blueprint](./docs/ARCHITECTURE.md):** Remote sensing SAR/optical pipeline, machine learning regression, CCE math, and system design.
+* 🌾 **[Comprehensive Assam Crops Catalog](./docs/CROPS_CATALOG_ASSAM.md):** Complete inventory of all 56 crops grown in Assam with Assamese local names, seasons, and yield profiles.
+* 🤖 **[Claude AI Session Context Guide](./docs/CLAUDE_SESSION_CONTEXT.md):** Guide for AI agents and developer sessions resuming work on this system.
+
+---
+
 ## 🌾 Project Overview
 
 This is the Next.js frontend application built to solve the **NESFIC-D-12** challenge statement:
