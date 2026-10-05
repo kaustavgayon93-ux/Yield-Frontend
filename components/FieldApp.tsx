@@ -129,6 +129,21 @@ export default function FieldApp({
             </div>
           </div>
 
+          <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", padding: "10px 14px", borderRadius: "8px", margin: "10px 12px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+            <div style={{ fontSize: "11px", color: "#065f46" }}>
+              <strong><i className="fa-brands fa-android"></i> Android Native App Ready</strong>
+              <div style={{ fontSize: "10px", color: "#047857" }}>Install directly on enumerator phones</div>
+            </div>
+            <a
+              href="/api/download/apk"
+              download="ASSAC-GeoAgri-Field-CCE.apk"
+              className="btn btn-sm btn-primary"
+              style={{ whiteSpace: "nowrap", padding: "4px 10px", fontSize: "11px", textDecoration: "none" }}
+            >
+              Get APK
+            </a>
+          </div>
+
           <form onSubmit={handleSubmit} className="app-form">
             {/* GPS */}
             <div className="form-section-card">

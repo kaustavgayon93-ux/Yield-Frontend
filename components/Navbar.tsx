@@ -102,6 +102,28 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
             >
               <i className="fa-solid fa-file-export"></i> Departmental Export
             </button>
+            <a
+              href="/api/download/apk"
+              download="ASSAC-GeoAgri-Field-CCE.apk"
+              className="nav-btn"
+              style={{
+                marginLeft: "auto",
+                background: "linear-gradient(135deg, #15803d, #166534)",
+                color: "#ffffff",
+                fontWeight: 700,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                textDecoration: "none",
+                borderRadius: "6px",
+                padding: "8px 14px",
+                boxShadow: "0 2px 6px rgba(21,128,61,0.25)"
+              }}
+              title="Download Signed Android APK for Field Smartphones"
+            >
+              <i className="fa-brands fa-android fa-lg"></i>
+              <span>Download APK</span>
+            </a>
           </nav>
         </div>
       </header>
