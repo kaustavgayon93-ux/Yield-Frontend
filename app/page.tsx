@@ -8,6 +8,7 @@ import DataEditor from "../components/DataEditor";
 import FieldApp from "../components/FieldApp";
 import UncertaintyView from "../components/UncertaintyView";
 import ExportView from "../components/ExportView";
+import CropDirectory from "../components/CropDirectory";
 
 import cropsData from "../data/crops.json";
 import districtsData from "../data/districts.json";
@@ -19,17 +20,20 @@ const GisMap = dynamic(() => import("../components/GisMap"), {
   loading: () => (
     <div
       style={{
-        height: "480px",
+        height: "500px",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         background: "#f8fafc",
         border: "1px solid #e2e8f0",
-        borderRadius: "6px",
+        borderRadius: "8px",
+        gap: "12px",
       }}
     >
-      <i className="fa-solid fa-spinner fa-spin fa-2x" style={{ color: "#1b5e20" }}></i>
-      <span style={{ marginLeft: "10px", fontWeight: 600 }}>Loading Assam GIS Map...</span>
+      <i className="fa-solid fa-spinner fa-spin fa-2x" style={{ color: "#166534" }}></i>
+      <span style={{ fontWeight: 700, color: "#1e293b" }}>Loading Assam State GIS Remote Sensing Map...</span>
+      <span style={{ fontSize: "12px", color: "#64748b" }}>Rendering all 35 Districts & Ground CCE Plots</span>
     </div>
   ),
 });
@@ -43,21 +47,43 @@ export default function Home() {
   const [auditLogs, setAuditLogs] = useState<any[]>((initialDb as any).audit_logs || []);
 
   // Filter states
+  const [selectedZone, setSelectedZone] = useState("all");
   const [selectedDistrict, setSelectedDistrict] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCrop, setSelectedCrop] = useState("all");
+  const [selectedSeason, setSelectedSeason] = useState("all");
   const [selectedStage, setSelectedStage] = useState("all");
+  const [searchFilter, setSearchFilter] = useState("");
 
   const [showCce, setShowCce] = useState(true);
   const [showDistricts, setShowDistricts] = useState(true);
+  const [selectedEstimateModal, setSelectedEstimateModal] = useState<any | null>(null);
+
+  // Available zones & categories
+  const agroZones = Array.from(new Set(districts.map((d: any) => d.zone)));
+  const cropCategories = Array.from(new Set(crops.map((c: any) => c.category)));
+
+  // Filtered districts according to selected zone
+  const filteredDistrictOptions = selectedZone === "all"
+    ? districts
+    : districts.filter((d: any) => d.zone === selectedZone);
 
   // Filtered estimates for dashboard
   const filteredEstimates = estimates.filter((e) => {
+    // Zone filter check
+    const distObj = districts.find((d: any) => d.id === e.district_id);
+    const matchZone = selectedZone === "all" || (distObj && distObj.zone === selectedZone);
     const matchDist = selectedDistrict === "all" || e.district_id === selectedDistrict;
     const matchCat = selectedCategory === "all" || e.category === selectedCategory;
     const matchCrop = selectedCrop === "all" || e.crop_id === selectedCrop;
+    const matchSeason = selectedSeason === "all" || (e.season && e.season.toLowerCase().includes(selectedSeason.toLowerCase()));
     const matchStage = selectedStage === "all" || e.approval_stage === selectedStage;
-    return matchDist && matchCat && matchCrop && matchStage;
+    const matchSearch = !searchFilter ||
+      e.district_name.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      e.crop_name.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      (e.notes && e.notes.toLowerCase().includes(searchFilter.toLowerCase()));
+
+    return matchZone && matchDist && matchCat && matchCrop && matchSeason && matchStage && matchSearch;
   });
 
   // Aggregations
@@ -75,6 +101,21 @@ export default function Home() {
   const verifiedCount = fieldRecords.filter((r) =>
     (r.verification_status || "").includes("Approved")
   ).length;
+
+  // Zone Breakdown Calculation
+  const zoneStats = agroZones.map((zone) => {
+    const zoneDistIds = new Set(districts.filter((d: any) => d.zone === zone).map((d: any) => d.id));
+    const zoneEsts = estimates.filter((e) => zoneDistIds.has(e.district_id));
+    const zoneProd = zoneEsts.reduce((sum, e) => sum + (e.production_mt || 0), 0);
+    const zoneArea = zoneEsts.reduce((sum, e) => sum + (e.area_hectares || 0), 0);
+    return {
+      zone,
+      productionMt: zoneProd,
+      areaHa: zoneArea,
+      districtCount: districts.filter((d: any) => d.zone === zone).length,
+    };
+  });
+  const maxZoneProd = Math.max(...zoneStats.map((z) => z.productionMt), 1);
 
   const handleUpdateEstimate = async (id: string, updatedData: any) => {
     const index = estimates.findIndex((e) => e.id === id);
@@ -165,8 +206,6 @@ export default function Home() {
     return true;
   };
 
-  const cropCategories = Array.from(new Set(crops.map((c: any) => c.category)));
-
   return (
     <div>
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -177,16 +216,50 @@ export default function Home() {
           <section className="tab-pane active">
             {/* Filter Strip */}
             <div className="filter-strip">
+              <div className="search-input-wrap" style={{ minWidth: "220px" }}>
+                <i className="fa-solid fa-magnifying-glass"></i>
+                <input
+                  type="text"
+                  placeholder="Quick search district or crop..."
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                />
+              </div>
+
+              {/* Agro-Climatic Zone */}
               <div className="filter-group">
                 <label>
-                  <i className="fa-solid fa-map-location-dot"></i> District
+                  <i className="fa-solid fa-mountain-sun"></i> Agro-Climatic Zone
+                </label>
+                <select
+                  value={selectedZone}
+                  onChange={(e) => {
+                    setSelectedZone(e.target.value);
+                    setSelectedDistrict("all");
+                  }}
+                >
+                  <option value="all">All 6 Agro-Climatic Zones</option>
+                  {agroZones.map((z: any) => (
+                    <option key={z} value={z}>
+                      {z}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* District */}
+              <div className="filter-group">
+                <label>
+                  <i className="fa-solid fa-map-location-dot"></i> District ({filteredDistrictOptions.length})
                 </label>
                 <select
                   value={selectedDistrict}
                   onChange={(e) => setSelectedDistrict(e.target.value)}
                 >
-                  <option value="all">All Assam Districts (35)</option>
-                  {districts.map((d: any) => (
+                  <option value="all">
+                    {selectedZone === "all" ? "All Assam Districts (35)" : `Districts in ${selectedZone} (${filteredDistrictOptions.length})`}
+                  </option>
+                  {filteredDistrictOptions.map((d: any) => (
                     <option key={d.id} value={d.id}>
                       {d.name} ({d.zone})
                     </option>
@@ -194,6 +267,7 @@ export default function Home() {
                 </select>
               </div>
 
+              {/* Category */}
               <div className="filter-group">
                 <label>
                   <i className="fa-solid fa-wheat-awn"></i> Category
@@ -202,7 +276,7 @@ export default function Home() {
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                 >
-                  <option value="all">All Categories</option>
+                  <option value="all">All Categories ({cropCategories.length})</option>
                   {cropCategories.map((cat: any) => (
                     <option key={cat} value={cat}>
                       {cat}
@@ -211,6 +285,7 @@ export default function Home() {
                 </select>
               </div>
 
+              {/* Crop */}
               <div className="filter-group">
                 <label>
                   <i className="fa-solid fa-seedling"></i> Specific Crop
@@ -228,6 +303,7 @@ export default function Home() {
                 </select>
               </div>
 
+              {/* Approval Stage */}
               <div className="filter-group">
                 <label>
                   <i className="fa-solid fa-stamp"></i> Approval Stage
@@ -247,10 +323,13 @@ export default function Home() {
               <button
                 className="btn btn-secondary"
                 onClick={() => {
+                  setSelectedZone("all");
                   setSelectedDistrict("all");
                   setSelectedCategory("all");
                   setSelectedCrop("all");
+                  setSelectedSeason("all");
                   setSelectedStage("all");
+                  setSearchFilter("");
                 }}
               >
                 <i className="fa-solid fa-arrows-rotate"></i> Reset Filters
@@ -272,8 +351,7 @@ export default function Home() {
               <div className="map-panel">
                 <div className="panel-header">
                   <div className="panel-title">
-                    <i className="fa-solid fa-earth-asia"></i> Spatial GIS Crop Distribution &
-                    CCE Ground Truth
+                    <i className="fa-solid fa-earth-asia"></i> Geospatial Crop Distribution & CCE Ground Truth ({districts.length} Districts)
                   </div>
                   <div className="map-controls">
                     <label className="layer-toggle">
@@ -282,7 +360,7 @@ export default function Home() {
                         checked={showCce}
                         onChange={(e) => setShowCce(e.target.checked)}
                       />{" "}
-                      CCE Field Points
+                      CCE Plots ({fieldRecords.length})
                     </label>
                     <label className="layer-toggle">
                       <input
@@ -290,7 +368,7 @@ export default function Home() {
                         checked={showDistricts}
                         onChange={(e) => setShowDistricts(e.target.checked)}
                       />{" "}
-                      District Hubs
+                      District Hubs ({districts.length})
                     </label>
                   </div>
                 </div>
@@ -305,40 +383,63 @@ export default function Home() {
 
                 <div className="map-legend">
                   <span className="legend-item">
-                    <span className="legend-dot green"></span> Field CCE Point
+                    <span className="legend-dot green"></span> Field CCE Point (Verified)
                   </span>
                   <span className="legend-item">
-                    <span className="legend-dot blue"></span> District Aggregate
+                    <span className="legend-dot amber"></span> Field CCE (Pending Audit)
                   </span>
                   <span className="legend-item">
-                    <span className="legend-dot amber"></span> Pending Verification
+                    <span className="legend-dot blue"></span> District Hub Aggregate
                   </span>
                   <span className="legend-item">
-                    <span className="legend-dot purple"></span> Sentinel-1 SAR Focus
+                    <span className="legend-dot purple"></span> Sentinel-1 SAR Dual-Pol Footprint
                   </span>
                 </div>
               </div>
 
+              {/* Side Analytics Panel */}
               <div className="analytics-panel">
+                {/* 1. Agro-Climatic Zone Distribution */}
                 <div className="panel-header">
                   <div className="panel-title">
-                    <i className="fa-solid fa-info-circle"></i> ASSAC Operational Remote Sensing
+                    <i className="fa-solid fa-chart-bar"></i> Agro-Climatic Zone Production
                   </div>
                 </div>
-                <div className="assam-agro-info">
-                  <div className="info-title">Cloud Penetration Architecture</div>
+                <div className="zone-bars-list">
+                  {zoneStats.map((zs) => {
+                    const pct = Math.round((zs.productionMt / maxZoneProd) * 100);
+                    return (
+                      <div key={zs.zone} className="zone-bar-row">
+                        <div className="zone-bar-header">
+                          <span className="zone-name">{zs.zone}</span>
+                          <span className="zone-val">
+                            {zs.productionMt.toLocaleString()} MT ({zs.areaHa.toLocaleString()} Ha)
+                          </span>
+                        </div>
+                        <div className="zone-bar-track">
+                          <div className="zone-bar-fill" style={{ width: `${pct}%` }}></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 2. Remote Sensing Telemetry Info Box */}
+                <div className="assam-agro-info" style={{ marginTop: "16px" }}>
+                  <div className="info-title">
+                    <i className="fa-solid fa-cloud-bolt"></i> Monsoon Cloud Penetration Architecture
+                  </div>
                   <p>
-                    During the Kharif Sali rice season, optical imagery experiences over 75%
-                    cloud hindrance. The platform leverages automated{" "}
-                    <strong>Sentinel-1 C-band SAR dual-pol (VV/VH)</strong> backscatter trajectories
-                    to monitor rice transplanting, heading, and inundation across the Brahmaputra
-                    floodplain.
+                    During Assam's Kharif season, persistent clouds obscure optical sensors by <strong>75%–85%</strong>.
+                    The platform overcomes this using automated <strong>Sentinel-1 C-band SAR (VV/VH)</strong> backscatter trajectories,
+                    achieving <strong>100% operational continuity</strong> across the Brahmaputra floodplain.
                   </p>
                 </div>
 
+                {/* 3. Departmental Approval Breakdown */}
                 <div className="panel-header" style={{ marginTop: "16px" }}>
                   <div className="panel-title">
-                    <i className="fa-solid fa-shield-halved"></i> Verification Breakdown
+                    <i className="fa-solid fa-shield-halved"></i> Departmental Approval Stages
                   </div>
                 </div>
                 <div className="verification-bars">
@@ -346,48 +447,74 @@ export default function Home() {
                     <div className="v-label-wrap">
                       <span>Department Approved</span>
                       <span>
-                        {
-                          estimates.filter((e) => e.approval_stage === "Department Approved")
-                            .length
-                        }{" "}
-                        (60%)
+                        {estimates.filter((e) => e.approval_stage === "Department Approved").length} of {estimates.length} (
+                        {Math.round((estimates.filter((e) => e.approval_stage === "Department Approved").length / estimates.length) * 100)}%)
                       </span>
                     </div>
                     <div className="v-progress-bar">
-                      <div className="v-fill" style={{ width: "60%" }}></div>
+                      <div
+                        className="v-fill"
+                        style={{
+                          width: `${(estimates.filter((e) => e.approval_stage === "Department Approved").length / estimates.length) * 100}%`,
+                          background: "#16a34a",
+                        }}
+                      ></div>
                     </div>
                   </div>
+
+                  <div className="v-row">
+                    <div className="v-label-wrap">
+                      <span>ASSAC Calibrated</span>
+                      <span>
+                        {estimates.filter((e) => e.approval_stage === "ASSAC Calibrated").length} of {estimates.length} (
+                        {Math.round((estimates.filter((e) => e.approval_stage === "ASSAC Calibrated").length / estimates.length) * 100)}%)
+                      </span>
+                    </div>
+                    <div className="v-progress-bar">
+                      <div
+                        className="v-fill"
+                        style={{
+                          width: `${(estimates.filter((e) => e.approval_stage === "ASSAC Calibrated").length / estimates.length) * 100}%`,
+                          background: "#0284c7",
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
                   <div className="v-row">
                     <div className="v-label-wrap">
                       <span>Field Verified</span>
                       <span>
-                        {
-                          estimates.filter((e) => e.approval_stage === "Field Verified").length
-                        }{" "}
-                        (20%)
+                        {estimates.filter((e) => e.approval_stage === "Field Verified").length} of {estimates.length} (
+                        {Math.round((estimates.filter((e) => e.approval_stage === "Field Verified").length / estimates.length) * 100)}%)
                       </span>
                     </div>
                     <div className="v-progress-bar">
                       <div
                         className="v-fill"
-                        style={{ width: "20%", background: "#f59e0b" }}
+                        style={{
+                          width: `${(estimates.filter((e) => e.approval_stage === "Field Verified").length / estimates.length) * 100}%`,
+                          background: "#f59e0b",
+                        }}
                       ></div>
                     </div>
                   </div>
+
                   <div className="v-row">
                     <div className="v-label-wrap">
                       <span>Pending Review</span>
                       <span>
-                        {
-                          estimates.filter((e) => e.approval_stage === "Pending Review").length
-                        }{" "}
-                        (20%)
+                        {estimates.filter((e) => e.approval_stage === "Pending Review").length} of {estimates.length} (
+                        {Math.round((estimates.filter((e) => e.approval_stage === "Pending Review").length / estimates.length) * 100)}%)
                       </span>
                     </div>
                     <div className="v-progress-bar">
                       <div
                         className="v-fill"
-                        style={{ width: "20%", background: "#ef4444" }}
+                        style={{
+                          width: `${(estimates.filter((e) => e.approval_stage === "Pending Review").length / estimates.length) * 100}%`,
+                          background: "#ef4444",
+                        }}
                       ></div>
                     </div>
                   </div>
@@ -396,19 +523,27 @@ export default function Home() {
             </div>
 
             {/* Estimates Table */}
-            <div className="table-card" style={{ marginTop: "20px" }}>
+            <div className="table-card" style={{ marginTop: "24px" }}>
               <div className="panel-header">
                 <div className="panel-title">
-                  <i className="fa-solid fa-table-list"></i> Active District Crop Estimates
-                  Summary
+                  <i className="fa-solid fa-table-list"></i> Authoritative District Crop Estimates Directory ({filteredEstimates.length} Records)
                 </div>
-                <button
-                  className="btn btn-sm btn-primary"
-                  onClick={() => setActiveTab("tab-editor")}
-                >
-                  <i className="fa-solid fa-pen"></i> Open Full Editor
-                </button>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    onClick={() => setActiveTab("tab-crops")}
+                  >
+                    <i className="fa-solid fa-book"></i> Browse 56 Crops Catalog
+                  </button>
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={() => setActiveTab("tab-editor")}
+                  >
+                    <i className="fa-solid fa-pen-to-square"></i> Open Reconciler & Calibrator
+                  </button>
+                </div>
               </div>
+
               <div className="table-responsive">
                 <table className="data-table">
                   <thead>
@@ -422,69 +557,198 @@ export default function Home() {
                       <th>95% Uncertainty CI</th>
                       <th>Production (MT)</th>
                       <th>Approval Stage</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredEstimates.map((e) => (
-                      <tr key={e.id}>
-                        <td>
-                          <strong>{e.district_name}</strong>
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 700, color: "#0f172a" }}>{e.crop_name}</div>
-                          <div style={{ fontSize: "10px", color: "#64748b" }}>{e.id}</div>
-                        </td>
-                        <td>
-                          <span className="badge-tag">{e.category}</span>
-                        </td>
-                        <td>{e.season}</td>
-                        <td>
-                          <strong>{e.area_hectares.toLocaleString()} Ha</strong>
-                          <div style={{ fontSize: "11px", color: "#64748b" }}>
-                            {(
-                              e.area_bighas || Math.round(e.area_hectares * 7.47)
-                            ).toLocaleString()}{" "}
-                            Bighas
-                          </div>
-                        </td>
-                        <td>
-                          <strong style={{ color: "#15803d" }}>
-                            {Number(e.yield_mt_ha).toFixed(2)}
-                          </strong>
-                        </td>
-                        <td>
-                          <span className="badge-tag green">
-                            {e.yield_uncertainty_ci95_lower} – {e.yield_uncertainty_ci95_upper}
-                          </span>
-                        </td>
-                        <td>
-                          <strong>{e.production_mt.toLocaleString()} MT</strong>
-                        </td>
-                        <td>
-                          <span
-                            className={`badge-stage ${
-                              e.approval_stage === "Department Approved"
-                                ? "approved"
-                                : e.approval_stage === "ASSAC Calibrated"
-                                ? "calibrated"
-                                : e.approval_stage === "Field Verified"
-                                ? "verified"
-                                : "pending"
-                            }`}
-                          >
-                            {e.approval_stage}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredEstimates.map((e) => {
+                      const cropObj = crops.find((c: any) => c.id === e.crop_id);
+                      return (
+                        <tr key={e.id}>
+                          <td>
+                            <strong>{e.district_name}</strong>
+                            <div style={{ fontSize: "11px", color: "#64748b" }}>{e.id}</div>
+                          </td>
+                          <td>
+                            <div style={{ fontWeight: 700, color: "#0f172a" }}>{e.crop_name}</div>
+                            {cropObj && cropObj.local_name && (
+                              <div style={{ fontSize: "11px", color: "#166534", fontWeight: 600 }}>
+                                অসমীয়া: {cropObj.local_name}
+                              </div>
+                            )}
+                          </td>
+                          <td>
+                            <span className="badge-tag">{e.category}</span>
+                          </td>
+                          <td>{e.season}</td>
+                          <td>
+                            <strong>{e.area_hectares.toLocaleString()} Ha</strong>
+                            <div style={{ fontSize: "11px", color: "#64748b" }}>
+                              {(e.area_bighas || Math.round(e.area_hectares * 7.47)).toLocaleString()} Bighas
+                            </div>
+                          </td>
+                          <td>
+                            <strong style={{ color: "#15803d", fontSize: "14px" }}>
+                              {Number(e.yield_mt_ha).toFixed(2)}
+                            </strong>
+                          </td>
+                          <td>
+                            <span className="badge-tag green">
+                              {e.yield_uncertainty_ci95_lower} – {e.yield_uncertainty_ci95_upper}
+                            </span>
+                          </td>
+                          <td>
+                            <strong>{e.production_mt.toLocaleString()} MT</strong>
+                          </td>
+                          <td>
+                            <span
+                              className={`badge-stage ${
+                                e.approval_stage === "Department Approved"
+                                  ? "approved"
+                                  : e.approval_stage === "ASSAC Calibrated"
+                                  ? "calibrated"
+                                  : e.approval_stage === "Field Verified"
+                                  ? "verified"
+                                  : "pending"
+                              }`}
+                            >
+                              {e.approval_stage}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className="btn btn-sm btn-secondary"
+                              onClick={() => setSelectedEstimateModal(e)}
+                              title="Inspect full telemetry, SAR coverage & audit notes"
+                            >
+                              <i className="fa-solid fa-eye"></i> Details
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             </div>
+
+            {/* Estimate Details Modal */}
+            {selectedEstimateModal && (
+              <div className="modal-backdrop" onClick={() => setSelectedEstimateModal(null)}>
+                <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+                  <div className="modal-header">
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div className="modal-icon-badge">
+                        <i className="fa-solid fa-chart-pie"></i>
+                      </div>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: "18px", color: "#0f172a" }}>
+                          {selectedEstimateModal.district_name} • {selectedEstimateModal.crop_name}
+                        </h3>
+                        <div style={{ fontSize: "12px", color: "#64748b" }}>
+                          Record ID: {selectedEstimateModal.id} | Stage: {selectedEstimateModal.approval_stage}
+                        </div>
+                      </div>
+                    </div>
+                    <button className="btn-close" onClick={() => setSelectedEstimateModal(null)}>
+                      <i className="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+
+                  <div className="modal-body">
+                    <div className="crop-detail-grid">
+                      <div className="detail-item">
+                        <span className="detail-label">Cropped Area</span>
+                        <span className="detail-val font-bold">
+                          {selectedEstimateModal.area_hectares.toLocaleString()} Ha
+                          <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 400, marginLeft: "4px" }}>
+                            ({(selectedEstimateModal.area_bighas || Math.round(selectedEstimateModal.area_hectares * 7.47)).toLocaleString()} Bighas)
+                          </span>
+                        </span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Yield Forecast</span>
+                        <span className="detail-val font-bold" style={{ color: "#15803d" }}>
+                          {selectedEstimateModal.yield_mt_ha} MT / Ha
+                        </span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">95% Confidence Interval</span>
+                        <span className="detail-val">
+                          {selectedEstimateModal.yield_uncertainty_ci95_lower} to {selectedEstimateModal.yield_uncertainty_ci95_upper} MT/Ha
+                        </span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Total Production</span>
+                        <span className="detail-val font-bold">
+                          {selectedEstimateModal.production_mt.toLocaleString()} MT
+                        </span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">SAR Dual-Pol Coverage</span>
+                        <span className="detail-val font-semibold" style={{ color: "#0369a1" }}>
+                          {selectedEstimateModal.sar_coverage_pct || 98}% (Sentinel-1)
+                        </span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Optical Cloud Obscuration</span>
+                        <span className="detail-val font-semibold" style={{ color: "#b45309" }}>
+                          {selectedEstimateModal.optical_cloud_pct || 72}% Masked
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="detail-section-box sar-box">
+                      <div className="section-title">
+                        <i className="fa-solid fa-clipboard-check"></i> Verification & Departmental Audit Notes
+                      </div>
+                      <p style={{ margin: "4px 0 0", fontSize: "13px", lineHeight: "1.5", color: "#1e293b" }}>
+                        {selectedEstimateModal.notes || "Ground truth calibrated against authorized Crop Cutting Experiments."}
+                      </p>
+                      <div style={{ fontSize: "11px", color: "#64748b", marginTop: "8px" }}>
+                        Reviewed by: <strong>{selectedEstimateModal.updated_by || "DAO / ASSAC Cell"}</strong> | Timestamp: {selectedEstimateModal.last_updated}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="modal-footer">
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => setSelectedEstimateModal(null)}
+                    >
+                      Close Details
+                    </button>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => {
+                        setSelectedEstimateModal(null);
+                        setActiveTab("tab-editor");
+                      }}
+                    >
+                      <i className="fa-solid fa-pen-to-square"></i> Edit in Reconciler
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
         )}
 
-        {/* TAB 2: DATA EDITOR & RECONCILIATION */}
+        {/* TAB 2: ASSAM 56-CROP DIRECTORY & PHENOLOGY */}
+        {activeTab === "tab-crops" && (
+          <section className="tab-pane active">
+            <CropDirectory crops={crops} />
+          </section>
+        )}
+
+        {/* TAB 3: UNCERTAINTY & SATELLITE ML SIMULATOR */}
+        {activeTab === "tab-accuracy" && (
+          <section className="tab-pane active">
+            <UncertaintyView />
+          </section>
+        )}
+
+        {/* TAB 4: DATA EDITOR & RECONCILIATION */}
         {activeTab === "tab-editor" && (
           <section className="tab-pane active">
             <DataEditor
@@ -495,7 +759,7 @@ export default function Home() {
           </section>
         )}
 
-        {/* TAB 3: FIELD DATA COLLECTION APP */}
+        {/* TAB 5: FIELD DATA COLLECTION APP */}
         {activeTab === "tab-fieldapp" && (
           <section className="tab-pane active">
             <FieldApp
@@ -507,14 +771,7 @@ export default function Home() {
           </section>
         )}
 
-        {/* TAB 4: UNCERTAINTY & VALIDATION */}
-        {activeTab === "tab-accuracy" && (
-          <section className="tab-pane active">
-            <UncertaintyView />
-          </section>
-        )}
-
-        {/* TAB 5: DEPARTMENTAL EXPORT */}
+        {/* TAB 6: DEPARTMENTAL EXPORT & SCHEDULE VI */}
         {activeTab === "tab-export" && (
           <section className="tab-pane active">
             <ExportView estimates={estimates} />

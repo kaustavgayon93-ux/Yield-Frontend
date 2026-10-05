@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 interface NavbarProps {
   activeTab: string;
@@ -8,6 +8,29 @@ interface NavbarProps {
 }
 
 export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
+  const [timeStr, setTimeStr] = useState<string>("");
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setTimeStr(
+        now.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+          timeZone: "Asia/Kolkata",
+        }) + " IST"
+      );
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
       {/* Top Govt Banner */}
@@ -21,6 +44,14 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
             <span>Assam State Space Applications Centre (ASSAC)</span>
             <span className="sep">|</span>
             <span>Directorate of Agriculture & Horticulture</span>
+            {timeStr && (
+              <>
+                <span className="sep">|</span>
+                <span style={{ color: "#facc15", fontWeight: 700 }}>
+                  <i className="fa-regular fa-clock"></i> {timeStr}
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -28,44 +59,47 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
       {/* Main Header */}
       <header className="main-header">
         <div className="header-container">
-          <div className="brand-block">
-            <div className="brand-logo">
-              <i className="fa-solid fa-satellite-dish"></i>
-            </div>
-            <div className="brand-text">
-              <div className="brand-title">
-                GeoAgri-Assam <span className="badge-tag">ASSAC AI Engine</span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+            <div className="brand-block">
+              <div className="brand-logo">
+                <i className="fa-solid fa-satellite-dish"></i>
               </div>
-              <div className="brand-subtitle">
-                Crop-Area, Yield & Production Satellite-Ground Estimation Platform
+              <div className="brand-text">
+                <div className="brand-title">
+                  GeoAgri-Assam <span className="badge-tag">ASSAC AI Engine</span>
+                  <span className="badge-tag green" style={{ fontSize: "10px" }}>v2.4 Production</span>
+                </div>
+                <div className="brand-subtitle">
+                  Statewide Satellite-Ground Crop Acreage, Yield & Production Estimation System (All 35 Districts • 56 Crops)
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Telemetry Strip */}
-          <div className="telemetry-strip">
-            <div className="sensor-pill active" title="Dual-Polarization C-Band SAR penetrating cloud cover">
-              <span className="dot pulse"></span>
-              <i className="fa-solid fa-radar"></i>
-              <div>
-                <div className="sensor-name">Sentinel-1 SAR</div>
-                <div className="sensor-status">100% Cloud Penetration</div>
+            {/* Telemetry Strip */}
+            <div className="telemetry-strip">
+              <div className="sensor-pill active" title="Dual-Polarization C-Band SAR penetrating cloud cover">
+                <span className="dot pulse"></span>
+                <i className="fa-solid fa-satellite"></i>
+                <div>
+                  <div className="sensor-name">Sentinel-1 SAR</div>
+                  <div className="sensor-status" style={{ color: "#166534" }}>100% Cloud Penetration</div>
+                </div>
               </div>
-            </div>
-            <div className="sensor-pill warning" title="Monsoon Optical Clouds Masked">
-              <span className="dot warning"></span>
-              <i className="fa-solid fa-cloud-sun"></i>
-              <div>
-                <div className="sensor-name">Sentinel-2 MSI</div>
-                <div className="sensor-status">74.6% Cloud Masked</div>
+              <div className="sensor-pill warning" title="Monsoon Optical Clouds Masked">
+                <span className="dot warning"></span>
+                <i className="fa-solid fa-cloud-sun"></i>
+                <div>
+                  <div className="sensor-name">Sentinel-2 MSI</div>
+                  <div className="sensor-status" style={{ color: "#92400e" }}>74.6% Cloud Masked</div>
+                </div>
               </div>
-            </div>
-            <div className="sensor-pill active" title="Drone Flights in Nagaon & Barpeta">
-              <span className="dot"></span>
-              <i className="fa-solid fa-drone"></i>
-              <div>
-                <div className="sensor-name">UAV High-Res</div>
-                <div className="sensor-status">42 Flights Active</div>
+              <div className="sensor-pill active" title="Model Accuracy: Ridge Regression R² = 0.912, MAPE = 5.06%">
+                <span className="dot"></span>
+                <i className="fa-solid fa-brain"></i>
+                <div>
+                  <div className="sensor-name">ML Ridge Engine</div>
+                  <div className="sensor-status" style={{ color: "#166534" }}>R² = 0.912 • MAPE 5.06%</div>
+                </div>
               </div>
             </div>
           </div>
@@ -79,6 +113,18 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
               <i className="fa-solid fa-chart-pie"></i> Executive GIS Dashboard
             </button>
             <button
+              className={`nav-btn ${activeTab === "tab-crops" ? "active" : ""}`}
+              onClick={() => setActiveTab("tab-crops")}
+            >
+              <i className="fa-solid fa-book-bookmark"></i> Assam 56-Crop Directory
+            </button>
+            <button
+              className={`nav-btn ${activeTab === "tab-accuracy" ? "active" : ""}`}
+              onClick={() => setActiveTab("tab-accuracy")}
+            >
+              <i className="fa-solid fa-bullseye"></i> Uncertainty & ML Simulator
+            </button>
+            <button
               className={`nav-btn ${activeTab === "tab-editor" ? "active" : ""}`}
               onClick={() => setActiveTab("tab-editor")}
             >
@@ -88,41 +134,24 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
               className={`nav-btn highlight ${activeTab === "tab-fieldapp" ? "active" : ""}`}
               onClick={() => setActiveTab("tab-fieldapp")}
             >
-              <i className="fa-solid fa-mobile-screen-button"></i> Field Data Collection App
-            </button>
-            <button
-              className={`nav-btn ${activeTab === "tab-accuracy" ? "active" : ""}`}
-              onClick={() => setActiveTab("tab-accuracy")}
-            >
-              <i className="fa-solid fa-bullseye"></i> Uncertainty & Validation
+              <i className="fa-solid fa-mobile-screen-button"></i> Field CCE Mobile App
             </button>
             <button
               className={`nav-btn ${activeTab === "tab-export" ? "active" : ""}`}
               onClick={() => setActiveTab("tab-export")}
             >
-              <i className="fa-solid fa-file-export"></i> Departmental Export
+              <i className="fa-solid fa-file-export"></i> Schedule VI & Export
             </button>
+
             <a
               href="/api/download/apk"
               download="ASSAC-GeoAgri-Field-CCE.apk"
-              className="nav-btn"
-              style={{
-                marginLeft: "auto",
-                background: "linear-gradient(135deg, #15803d, #166534)",
-                color: "#ffffff",
-                fontWeight: 700,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                textDecoration: "none",
-                borderRadius: "6px",
-                padding: "8px 14px",
-                boxShadow: "0 2px 6px rgba(21,128,61,0.25)"
-              }}
-              title="Download Signed Android APK for Field Smartphones"
+              className="nav-btn apk-btn"
+              title="Download Standalone Signed Android APK for Field Smartphones (4.70 MB)"
             >
               <i className="fa-brands fa-android fa-lg"></i>
-              <span>Download APK</span>
+              <span>Download Field APK</span>
+              <span className="apk-size-pill">4.7 MB</span>
             </a>
           </nav>
         </div>
