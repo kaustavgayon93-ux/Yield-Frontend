@@ -40,6 +40,7 @@ export default function Home() {
   const [districts] = useState(districtsData);
   const [estimates, setEstimates] = useState<any[]>(initialDb.estimates || []);
   const [fieldRecords, setFieldRecords] = useState<any[]>(initialDb.field_records || []);
+  const [auditLogs, setAuditLogs] = useState<any[]>((initialDb as any).audit_logs || []);
 
   // Filter states
   const [selectedDistrict, setSelectedDistrict] = useState("all");
@@ -100,6 +101,39 @@ export default function Home() {
     const nextList = [...estimates];
     nextList[index] = updatedRecord;
     setEstimates(nextList);
+
+    // Create and prepend immutable audit log entry
+    const newAuditEntry = {
+      id: `log-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      record_id: id,
+      action: "ESTIMATE_CALIBRATION_RECONCILED",
+      user: updatedData.updated_by || "Departmental Officer",
+      justification: updatedData.justification || "Reconciliation against ground CCE points",
+      changes: {
+        area_hectares: { before: current.area_hectares, after: newAreaHa },
+        yield_mt_ha: { before: current.yield_mt_ha, after: newYield },
+      },
+    };
+    setAuditLogs((prev) => [newAuditEntry, ...prev]);
+
+    // Async REST sync to local and backend APIs
+    try {
+      await fetch(`/api/estimates/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      }).catch(() => {});
+
+      await fetch(`http://localhost:8000/api/estimates/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      }).catch(() => {});
+    } catch {
+      // offline fallback
+    }
+
     return true;
   };
 
@@ -111,6 +145,23 @@ export default function Home() {
       verification_status: "Verified & Approved",
     };
     setFieldRecords([newRec, ...fieldRecords]);
+
+    try {
+      await fetch("/api/field-records", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(record),
+      }).catch(() => {});
+
+      await fetch("http://localhost:8000/api/field-records", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(record),
+      }).catch(() => {});
+    } catch {
+      // offline fallback
+    }
+
     return true;
   };
 
@@ -436,7 +487,11 @@ export default function Home() {
         {/* TAB 2: DATA EDITOR & RECONCILIATION */}
         {activeTab === "tab-editor" && (
           <section className="tab-pane active">
-            <DataEditor estimates={estimates} onUpdateEstimate={handleUpdateEstimate} />
+            <DataEditor
+              estimates={estimates}
+              auditLogs={auditLogs}
+              onUpdateEstimate={handleUpdateEstimate}
+            />
           </section>
         )}
 

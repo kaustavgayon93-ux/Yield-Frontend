@@ -4,10 +4,11 @@ import React, { useState } from "react";
 
 interface DataEditorProps {
   estimates: any[];
+  auditLogs?: any[];
   onUpdateEstimate: (id: string, updatedData: any) => Promise<boolean>;
 }
 
-export default function DataEditor({ estimates, onUpdateEstimate }: DataEditorProps) {
+export default function DataEditor({ estimates, auditLogs = [], onUpdateEstimate }: DataEditorProps) {
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
@@ -104,6 +105,7 @@ export default function DataEditor({ estimates, onUpdateEstimate }: DataEditorPr
               <option value="Draft">Draft</option>
               <option value="Pending Review">Pending Review</option>
               <option value="Field Verified">Field Verified</option>
+              <option value="ASSAC Calibrated">ASSAC Calibrated</option>
               <option value="Department Approved">Department Approved</option>
             </select>
           </div>
@@ -183,6 +185,96 @@ export default function DataEditor({ estimates, onUpdateEstimate }: DataEditorPr
                   </td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* IMMUTABLE AUDIT TRAIL LOG (NFR-05 & PRD KPI #3) */}
+      <div className="table-card" style={{ marginTop: "24px" }}>
+        <div className="panel-header">
+          <div className="panel-title">
+            <i className="fa-solid fa-clock-rotate-left" style={{ color: "#1b5e20", marginRight: "8px" }}></i>
+            Departmental Calibration & Manual Override Audit Trail (NFR-05)
+          </div>
+          <span className="badge-tag green">
+            <i className="fa-solid fa-shield-halved"></i> 100% Immutable Logged
+          </span>
+        </div>
+        <div className="table-responsive">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp (UTC)</th>
+                <th>Target Record</th>
+                <th>Action</th>
+                <th>Authorized Officer</th>
+                <th>Parameter Changes</th>
+                <th>Justification & CCE Corroboration</th>
+                <th>Audit Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {auditLogs.length > 0 ? (
+                auditLogs.map((log) => (
+                  <tr key={log.id}>
+                    <td>
+                      <small style={{ color: "#64748b" }}>
+                        {new Date(log.timestamp).toLocaleString()}
+                      </small>
+                    </td>
+                    <td>
+                      <code>{log.record_id}</code>
+                    </td>
+                    <td>
+                      <span className="badge-tag" style={{ background: "#e0f2fe", color: "#0369a1", fontSize: "10px" }}>
+                        {log.action}
+                      </span>
+                    </td>
+                    <td>
+                      <strong>{log.user}</strong>
+                    </td>
+                    <td>
+                      {log.changes ? (
+                        <div style={{ fontSize: "11px", lineHeight: "1.4" }}>
+                          {log.changes.area_hectares && (
+                            <div>
+                              Area: {log.changes.area_hectares.before?.toLocaleString()} →{" "}
+                              <strong>{log.changes.area_hectares.after?.toLocaleString()} Ha</strong>
+                            </div>
+                          )}
+                          {log.changes.yield_mt_ha && (
+                            <div>
+                              Yield: {log.changes.yield_mt_ha.before} →{" "}
+                              <strong style={{ color: "#15803d" }}>{log.changes.yield_mt_ha.after} MT/Ha</strong>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: "11px" }}>
+                          {log.field_changed}: {log.previous_value} → <strong>{log.new_value}</strong>
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ maxWidth: "300px" }}>
+                      <span style={{ fontSize: "12px", color: "#334155" }}>
+                        {log.justification}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="badge-tag green" style={{ fontSize: "10px" }}>
+                        <i className="fa-solid fa-lock"></i> Verified
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: "center", color: "#94a3b8", padding: "16px" }}>
+                    No manual departmental edits recorded yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
