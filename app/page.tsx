@@ -336,6 +336,52 @@ export default function Home() {
               </button>
             </div>
 
+            {/* Android Field App APK Download Banner */}
+            <div className="apk-hero-banner">
+              <div className="apk-hero-left">
+                <div className="apk-hero-badge-wrap">
+                  <div className="apk-icon-circle">
+                    <i className="fa-brands fa-android"></i>
+                  </div>
+                  <div>
+                    <div className="apk-hero-title">
+                      ASSAC GeoAgri-Assam Field CCE Android App (v2.4 Production)
+                      <span className="badge-tag green">100% Offline Capable</span>
+                    </div>
+                    <div className="apk-hero-desc">
+                      Official standalone native Android application for District Agricultural Officers (DAOs), ADOs, and field enumerators across all 35 Assam districts. Bundles all 56 crops, standardized 5m×5m cut calculator with 14% moisture formula, on-device ML estimator, and offline sync queue.
+                    </div>
+                    <div className="apk-hero-meta">
+                      <span><i className="fa-solid fa-file-archive"></i> Package: <strong>in.gov.assam.assac.geoagri</strong></span>
+                      <span><i className="fa-solid fa-hard-drive"></i> Size: <strong>4.71 MB</strong></span>
+                      <span><i className="fa-solid fa-shield-halved"></i> Signature: <strong>v1, v2, v3 Verified</strong></span>
+                      <span><i className="fa-solid fa-signal"></i> Network: <strong>Runs Without Internet</strong></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="apk-hero-actions">
+                <a
+                  href="/api/download/apk"
+                  download="ASSAC-GeoAgri-Field-CCE.apk"
+                  className="apk-download-btn"
+                  title="Direct Download Standalone Android APK (4.71 MB)"
+                >
+                  <i className="fa-brands fa-android fa-lg"></i>
+                  <span>Download APK (4.71 MB)</span>
+                </a>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setActiveTab("tab-fieldapp")}
+                  style={{ background: "rgba(255,255,255,0.15)", color: "#ffffff", border: "1px solid rgba(255,255,255,0.25)" }}
+                >
+                  <i className="fa-solid fa-mobile-screen"></i> Launch Web Field App
+                </button>
+              </div>
+            </div>
+
             {/* KPI Summary Cards */}
             <KpiCards
               totalAreaHa={totalAreaHa}
@@ -528,7 +574,16 @@ export default function Home() {
                 <div className="panel-title">
                   <i className="fa-solid fa-table-list"></i> Authoritative District Crop Estimates Directory ({filteredEstimates.length} Records)
                 </div>
-                <div style={{ display: "flex", gap: "10px" }}>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <a
+                    href="/api/download/apk"
+                    download="ASSAC-GeoAgri-Field-CCE.apk"
+                    className="btn btn-sm btn-primary"
+                    style={{ background: "#15803d", borderColor: "#16a34a", textDecoration: "none", color: "#ffffff", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                    title="Direct Download Standalone Signed Android APK"
+                  >
+                    <i className="fa-brands fa-android"></i> Download APK (4.71 MB)
+                  </a>
                   <button
                     className="btn btn-sm btn-secondary"
                     onClick={() => setActiveTab("tab-crops")}

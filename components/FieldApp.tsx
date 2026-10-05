@@ -116,6 +116,34 @@ export default function FieldApp({
 
   return (
     <div className="field-app-layout">
+      {/* Prominent APK Download Callout */}
+      <div className="apk-callout-card" style={{ gridColumn: "1 / -1", width: "100%", maxWidth: "860px", margin: "0 auto 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div className="apk-callout-icon">
+              <i className="fa-brands fa-android fa-2x"></i>
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "15px", color: "#0f172a" }}>
+                ASSAC GeoAgri-Assam Native Android Field App (v2.4 Production)
+              </div>
+              <div style={{ fontSize: "12px", color: "#475569" }}>
+                Standalone 4.71 MB signed APK with 100% offline GPS capture, 56 crops, CCE 14% moisture formula, and local storage queue.
+              </div>
+            </div>
+          </div>
+          <a
+            href="/api/download/apk"
+            download="ASSAC-GeoAgri-Field-CCE.apk"
+            className="btn btn-primary"
+            style={{ width: "auto", padding: "10px 18px", textDecoration: "none", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: "8px" }}
+          >
+            <i className="fa-brands fa-android fa-lg"></i>
+            <span>Download APK (4.71 MB)</span>
+          </a>
+        </div>
+      </div>
+
       {/* Smartphone Simulator */}
       <div className="phone-frame">
         <div className="phone-speaker"></div>

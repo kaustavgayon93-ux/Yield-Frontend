@@ -143,6 +143,24 @@ export default function ExportView({ estimates }: ExportViewProps) {
             {copied ? "Copied to Clipboard!" : "Copy Schedule VI"}
           </button>
         </div>
+
+        <div className="export-card" style={{ border: "2px solid #86efac", background: "#f0fdf4" }}>
+          <div className="export-card-icon" style={{ background: "#dcfce7", color: "#15803d" }}>
+            <i className="fa-brands fa-android"></i>
+          </div>
+          <h4 style={{ color: "#14532d" }}>Field Android APK (v2.4)</h4>
+          <p>
+            Official standalone native Android deployment package (4.71 MB, signed v1/v2/v3). Includes 100% offline 56-crop catalog, GPS capture, and 14% moisture CCE calculator.
+          </p>
+          <a
+            href="/api/download/apk"
+            download="ASSAC-GeoAgri-Field-CCE.apk"
+            className="btn btn-primary w-100"
+            style={{ textDecoration: "none", fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+          >
+            <i className="fa-brands fa-android fa-lg"></i> Download APK (4.71 MB)
+          </a>
+        </div>
       </div>
 
       <div className="table-card" style={{ marginTop: "24px" }}>

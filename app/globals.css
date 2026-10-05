@@ -1415,3 +1415,143 @@ body {
   padding: 3px 8px;
   border-radius: 999px;
 }
+
+/* =========================================================================
+   APK DOWNLOAD HERO BANNER & PROMINENT CALLOUTS
+   ========================================================================= */
+
+.apk-hero-banner {
+  background: linear-gradient(135deg, #052e16 0%, #0f3d1e 50%, #14532d 100%);
+  border: 1px solid #16a34a;
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 4px 14px rgba(5,46,22,0.25);
+  position: relative;
+  overflow: hidden;
+}
+.apk-hero-banner::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.apk-hero-left {
+  flex: 1;
+}
+.apk-hero-badge-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.apk-icon-circle {
+  width: 52px;
+  height: 52px;
+  background: rgba(34,197,94,0.18);
+  border: 2px solid #22c55e;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #4ade80;
+  box-shadow: 0 0 15px rgba(34,197,94,0.3);
+  flex-shrink: 0;
+}
+.apk-hero-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  line-height: 1.3;
+}
+.apk-hero-desc {
+  font-size: 13px;
+  color: #bbf7d0;
+  margin-top: 4px;
+  line-height: 1.45;
+  max-width: 820px;
+}
+.apk-hero-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #86efac;
+}
+.apk-hero-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.apk-hero-meta strong {
+  color: #ffffff;
+}
+.apk-hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 230px;
+}
+.apk-download-btn {
+  background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  padding: 12px 18px !important;
+  font-size: 14px !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: 0 4px 12px rgba(34,197,94,0.4) !important;
+  text-decoration: none !important;
+  border: 1px solid #4ade80 !important;
+  text-align: center;
+  transition: all 0.2s ease !important;
+}
+.apk-download-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(34,197,94,0.5) !important;
+  background: linear-gradient(135deg, #4ade80, #22c55e) !important;
+}
+
+/* APK Callout in Field App */
+.apk-callout-card {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-sm);
+}
+.apk-callout-icon {
+  width: 44px;
+  height: 44px;
+  background: #dcfce7;
+  color: #15803d;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .apk-hero-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .apk-hero-actions {
+    min-width: auto;
+  }
+}
